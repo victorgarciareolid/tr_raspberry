@@ -2,11 +2,12 @@ from requests.auth import HTTPDigestAuth
 import requests
 import json
 
-header = {'Authorization':'Digest username=%s, realm=%s, nonce=%s, uri=%s, response=%x'}
-parameter = {'board':'board34', 'sensor1': 2423, 'sensor2': 141241, 'sensor3': 123 }
+header= {'Content-type': 'application/json', 'Accept': 'text/plain'}
+parameter = {'board':'board1', 'sensor1': 2423, 'location': {'lat': 40, 'lon': 21.23}};
 
 parameters = json.dumps(parameter, sort_keys=True)
-url = 'http://localhost:3000/newboard'
+ 
+#url = 'http://localhost/newboard'
 #r = requests.get(url, auth=HTTPDigestAuth('newboard', 'newboard'))
 #print(r.json())
-r1 = requests.post('http://localhost:3000/', auth=HTTPDigestAuth('board34', 'board34julian'), data=parameters)
+r1 = requests.post('http://localhost/', auth=HTTPDigestAuth('board1', 'board1julian'), data=parameters, headers=header)
