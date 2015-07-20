@@ -2,15 +2,22 @@ from requests.auth import HTTPDigestAuth
 import requests
 import json
 
+txt = open("credentials.txt")
+
+username= txt.readline()
+password = txt.readline()
+
 addr = "http://localhost:3000"
-username = "holamundo"
-password = "contrasenya"
-
 header = {"Content-type":"application/json", "Accept":"text/plain"}
-sample = {"concentration":2.22}
 
-params = json.dumps(sample, sort_keys=True)
+def VoltsToPpm():
+    pass
 
-request = requests.post(addr,auth=HTTPDigestAuth(username, password), data=params, headers=header)
+def SendEveryNSeconds():
+    concentration = VoltsToPpm(MakeMeasurement())
+    measurement = {"concentration":concentration}
+    JsonData = json.dumps(measurement, sort_keys=True)
+    Request = requests.post(addr,auth=HTTPDigestAuth(username, password), data=JsonData, headers=header)
 
-
+def MakeMeasurement():
+    pass
