@@ -1,14 +1,11 @@
 from Adafruit_ADS1x15 import ADS1x15
 from requests.auth import HTTPDigestAuth
-import threading
-import requests
-import json
-
+import requests, json, time
 txt = open("credentials.txt")
 username= txt.readline()
 password = txt.readline()
 
-addr = "http://localhost:3000" # Poner dirección de AWS
+addr = "http://192.168.1.67" # Poner direccion de AWS
 header = {"Content-type":"application/json", "Accept":"text/plain"}
 
 AdcPort = 0x00
@@ -20,34 +17,35 @@ adc = ADS1x15(ic = AdcPort)
 
 WorkingTemperature = 49
 
-# Co2Concentration at 400ppm, Output Voltage at 400ppm, slope (between 400 and 40000)
-CO2EcuationParams = []
+# log 400ppm, 400ppm voltage, slope (between 400 and 40000)
+CO2EcuationParams = [2.602, 0.380, -0.0729]
 CO2SensorGain = 8.5
 
 def VoltsToPpm(Measurement):
     Measurement = Measurement/CO2SensorGain
-    if(Measurement >= CO2EcuationParams[1]):
-        return 400
-    else:
-        return(pow(10, Measurement - CO2EcuationParams[1] / CO2EcuationParams[2]) + CO2EcuationParams[0])
+    print(Measurement)
+    return(pow(10, ((Measurement - CO2EcuationParams[1]) / CO2EcuationParams[2]) + CO2EcuationParams[0]))
 
 def VoltsToTemperature(Measurement):
-    return Measurement / 10
+    return Measurement*100
 
-def SendDataTemporarily():
+def SendData():
     concentration = VoltsToPpm(MakeMeasurement(CO2Channel))
-
     measurement = {"concentration":concentration}
     JsonData = json.dumps(measurement, sort_keys=True)
-    Request = requests.post(addr,auth=HTTPDigestAuth(username, password), data=JsonData, headers=header)
-
-    threading.Timer(300, SendEveryNSeconds).start()
+    Request = requests.post(addr,auth=HTTPDigestAuth("holamundo", "contrasenya"), data=JsonData, headers=header)
 
 def MakeMeasurement(Channel):
-    return adc.readADCSingleEnded(Channel, Gain, SamplingRate)
+    return(adc.readADCSingleEnded(Channel, Gain, SamplingRate)/1000)
 
-def main():
-    while(VoltsToTemperature(MakeMeasurement(TemperatureChannel)) >= WorkingTemperature):
-        SendDataTemporarily()
-
-main()
+    
+while 1:
+    co2 = VoltsToPpm(MakeMeasurement(CO2Channel))
+    temp = VoltsToTemperature(MakeMeasurement(TemperatureChannel))
+    print("Temperature: " + str(temp))
+    print("CO2: " + str(co2)) 
+    while(temp >= WorkingTemperature):
+	print("Sending data")
+        SendData()
+	time.sleep(60)
+    time.sleep(10)
