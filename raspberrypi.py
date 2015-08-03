@@ -1,10 +1,18 @@
 from Adafruit_ADS1x15 import ADS1x15
 from requests.auth import HTTPDigestAuth
 import requests, json, time
-txt = open("credentials.txt")
-username= txt.readline()
-password = txt.readline()
+import hashlib
 
+with open("credentials.json") as credentials:
+    credential = json.load(credentials)
+
+h = hashlib.sha512()
+
+username = credential["username"]
+h.update(credential["password"])
+password = h.hexdigest()
+
+print(password)
 addr = "http://192.168.1.67" # Poner direccion de AWS
 header = {"Content-type":"application/json", "Accept":"text/plain"}
 
@@ -23,7 +31,6 @@ CO2SensorGain = 8.5
 
 def VoltsToPpm(Measurement):
     Measurement = Measurement/CO2SensorGain
-    print(Measurement)
     return(pow(10, ((Measurement - CO2EcuationParams[1]) / CO2EcuationParams[2]) + CO2EcuationParams[0]))
 
 def VoltsToTemperature(Measurement):
@@ -33,7 +40,7 @@ def SendData():
     concentration = VoltsToPpm(MakeMeasurement(CO2Channel))
     measurement = {"concentration":concentration}
     JsonData = json.dumps(measurement, sort_keys=True)
-    Request = requests.post(addr,auth=HTTPDigestAuth("holamundo", "contrasenya"), data=JsonData, headers=header)
+    Request = requests.post(addr,auth=HTTPDigestAuth(username, password), data=JsonData, headers=header)
 
 def MakeMeasurement(Channel):
     return(adc.readADCSingleEnded(Channel, Gain, SamplingRate)/1000)
@@ -43,9 +50,10 @@ while 1:
     co2 = VoltsToPpm(MakeMeasurement(CO2Channel))
     temp = VoltsToTemperature(MakeMeasurement(TemperatureChannel))
     print("Temperature: " + str(temp))
-    print("CO2: " + str(co2)) 
-    while(temp >= WorkingTemperature):
-	print("Sending data")
-        SendData()
-	time.sleep(60)
-    time.sleep(10)
+    print("CO2: " + str(co2))
+    if(temp >= WorkingTemperature):
+    	while(1):
+		print("Sending data: ", co2)
+        	SendData()
+		time.sleep(1)
+    time.sleep(2)
