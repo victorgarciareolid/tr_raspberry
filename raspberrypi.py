@@ -3,7 +3,7 @@ from requests.auth import HTTPDigestAuth
 import requests, json, time
 import hashlib
 
-with open("credentials.json") as credentials:
+with open("/home/pi/tr_raspberry/credentials.json") as credentials:
     credential = json.load(credentials)
 
 h = hashlib.sha512()
@@ -12,8 +12,7 @@ username = credential["username"]
 h.update(credential["password"])
 password = h.hexdigest()
 
-print(password)
-addr = "http://192.168.1.67" # Poner direccion de AWS
+addr = "https://52.28.164.86/data" # Poner direccion de AWS
 header = {"Content-type":"application/json", "Accept":"text/plain"}
 
 AdcPort = 0x00
@@ -30,30 +29,29 @@ CO2EcuationParams = [2.602, 0.380, -0.0729]
 CO2SensorGain = 8.5
 
 def VoltsToPpm(Measurement):
-    Measurement = Measurement/CO2SensorGain
-    return(pow(10, ((Measurement - CO2EcuationParams[1]) / CO2EcuationParams[2]) + CO2EcuationParams[0]))
+	Measurement = Measurement/CO2SensorGain
+	return(pow(10, ((Measurement - CO2EcuationParams[1]) / CO2EcuationParams[2]) + CO2EcuationParams[0]))
 
 def VoltsToTemperature(Measurement):
-    return Measurement*100
+	return Measurement*100
 
 def SendData():
-    concentration = VoltsToPpm(MakeMeasurement(CO2Channel))
-    measurement = {"concentration":concentration}
-    JsonData = json.dumps(measurement, sort_keys=True)
-    Request = requests.post(addr,auth=HTTPDigestAuth(username, password), data=JsonData, headers=header)
+	concentration = VoltsToPpm(MakeMeasurement(CO2Channel))
+	measurement = {"concentration":concentration}
+	JsonData = json.dumps(measurement, sort_keys=True)
+	Request = requests.post(addr,auth=HTTPDigestAuth(username, password), data=JsonData, headers=header, verify=False)
+	return concentration
 
 def MakeMeasurement(Channel):
-    return(adc.readADCSingleEnded(Channel, Gain, SamplingRate)/1000)
-
-    
+	return(adc.readADCSingleEnded(Channel, Gain, SamplingRate)/1000)
+ 
 while 1:
-    co2 = VoltsToPpm(MakeMeasurement(CO2Channel))
-    temp = VoltsToTemperature(MakeMeasurement(TemperatureChannel))
-    print("Temperature: " + str(temp))
-    print("CO2: " + str(co2))
-    if(temp >= WorkingTemperature):
-    	while(1):
-		print("Sending data: ", co2)
-        	SendData()
-		time.sleep(1)
-    time.sleep(2)
+	co2 = VoltsToPpm(MakeMeasurement(CO2Channel))
+	temp = VoltsToTemperature(MakeMeasurement(TemperatureChannel))
+	print("Temperature: " + str(temp))
+	print("CO2: " + str(co2))
+	if(temp >= WorkingTemperature):
+		while(1):
+			print(SendData())
+			time.sleep(10)
+	time.sleep(2)
