@@ -50,8 +50,7 @@ while 1:
 	temp = VoltsToTemperature(MakeMeasurement(TemperatureChannel))
 	print("Temperature: " + str(temp))
 	print("CO2: " + str(co2))
-	if(temp >= WorkingTemperature):
-		while(1):
-			print(SendData())
-			time.sleep(10)
+	while(VoltsToTemperature(MakeMeasurement(TemperatureChannel)) >= WorkingTemperature):
+		print(SendData())
+		time.sleep(10)
 	time.sleep(2)
