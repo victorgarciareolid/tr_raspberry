@@ -22,15 +22,15 @@ CO2Channel = 0
 TemperatureChannel = 1
 adc = ADS1x15(ic = AdcPort)
 
-WorkingTemperature = 49
+WorkingTemperature = 40
 
 # log 400ppm, 400ppm voltage, slope (between 400 and 40000)
-CO2EcuationParams = [2.602, 0.416, -15.625]
+CO2EcuationParams = [2.602, 389, -94.5]
 CO2SensorGain = 8.5
 
 def VoltsToPpm(Measurement):
-	Measurement = Measurement/CO2SensorGain
-	return(pow(10, (((Measurement - CO2EcuationParams[1]) / CO2EcuationParams[2])) + CO2EcuationParams[0]))
+	Measurement = (Measurement/CO2SensorGain) * 1000
+	return(pow(10, (((Measurement - CO2EcuationParams[1]) + (CO2EcuationParams[2]*CO2EcuationParams[0]))/CO2EcuationParams[2])))
 
 def VoltsToTemperature(Measurement):
 	return Measurement*100
